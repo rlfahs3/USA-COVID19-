@@ -1,0 +1,121 @@
+---
+title: "COVID19 USA"
+author: "Chanho Hyun"
+date: '2022 2 15 '
+output:
+  pdf_document: 
+    fig_width: 10
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+I used USA COVID19 data until 2020 Dec 10th. 
+
+I did not consider about the new variation of COVID19 such as "Omicron" so my result might be inaccurate.
+
+Goal: Find out the relationship between the ratio of white people in each
+state and cases_per_100,000. (Dose white ratio affects the cases of
+COVID19?)
+
+Sub Goal: If white ratio and cases_per_100,000 has no relationship, then
+find out the relationship between other variables.
+
+
+```{r}
+df <- data.frame("variable" = c("state", "white_ratio", "cases per 100,000",
+                                "ses", "sex", "oler than 65"), "Description" 
+                 = c("name of states", "white ratio", "cases per 100,000", 
+                     "socioeconomic status of the people", 
+" if the state has more male population than female population, 1, otherwise 0",
+"ratio of people who are older than 65"))
+df
+```
+
+
+
+
+This is the table represents my variables. 
+I could not get each person data who is within a state, but if there is the data about each person, then I would expect that people in the same state are not independent of each other. There is likely a region effect that would violate independence assumption. 
+However, for this project I could not get the individual's data of each state, 
+so we can skip this violation. (I cannot use LMM for this project)
+
+*ses is median_household_income*
+
+
+
+
+```{r}
+library(readr)
+library(ggplot2)
+library(tidyverse)
+
+
+state <- read_csv("state.csv")
+ggplot(data=state, aes(x=cases_per, y=white_ratio)) + 
+  geom_point(alpha = 0.5) + geom_smooth(method = "lm", se = FALSE) + 
+  theme_classic()
+```
+
+
+
+
+This a scatter plot to examine the relationship between casese per
+100,000 and white_ratio Include a line of best fit. 
+
+Followed by scatter plot, line of best fit shows there is a reasonable relationship between cases_per_100,000 and minotirty_status since it has positive slope. 
+However, if there is no line of best fit, it is hard to find out the relationship between white_ratio and cases_per because dots are too scattered.
+
+
+
+
+```{r}
+lm <- lm(white_ratio ~ cases_per + sex + median_household_income + 
+           older_than_65, data = state)
+
+summary(lm)
+```
+
+
+
+
+This is linear model with test as the response and use cases_per_100,000, sex, median_household_income, ratio of people who are older than 65 as the covariates.Followed by p-value, cases_per, median_household_income, and older_than_65 are statistically significant, but sex is not.
+
+
+
+
+```{r}
+confint(lm)
+```
+
+
+
+
+Followed by confint(lm), my (intercept) which is 95% confidence interval
+of white ratio has negative lower bound. So, I put zero instead of
+negative lower- bound. Thus, we can claim that with 95% conficence, our
+intercept is between 0 and 1.7028e+00.
+
+cases_per looks statistically significant. With 95% of confidence, one
+unit increase in cases_per, white_ratio is changed from 1.6998e-03 to
+4.5766e-03
+
+As a result, we can confirm that cases_per and white_ratio do have
+relationship. However, we got negative lower bound for our 95%
+confidence of intercept and the differences between cases_per's lower
+bound and upper bound is too small. Therefore, we cannot claim that the
+ratio of white people affects cases_per.
+
+I wanted to use linear mixed model function for my project, but I could
+not get the data from each person in each state, so I could not use lmm
+for this project.
+
+
+
+citation:
+
+Covid-19 in the United States. Data USA. (n.d.). Retrieved February 15, 2022,
+from https://datausa.io/coronavirus 
+
+U.S. Census Bureau quickfacts: California. (n.d.). Retrieved February 15, 2022, 
+from https://www.census.gov/quickfacts/fact/table/CA/PST045221 
